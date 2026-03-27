@@ -1,0 +1,18 @@
+<!--sample HTML file modified from https://www.w3schools.com/howto/howto_css_login_form.asp-->
+
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="{{ url_for('static', filename='frontendcode.css') }}">
+</head>
+<body>
+
+<h2>This IP is now in a database!</h2>
+<p>Your ip: {{ ip_address }} </p>
+<form action="/" method="get">
+    <button>Go back</button>
+  </form>
+
+</body>
+</html>

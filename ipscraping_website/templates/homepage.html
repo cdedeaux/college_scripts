@@ -1,0 +1,18 @@
+<!--sample HTML file modified from https://www.w3schools.com/howto/howto_css_login_form.asp-->
+
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="{{ url_for('static', filename='homepage.css') }}">
+</head>
+<body>
+
+<h2>Scan your computer for vulnerabilites!</h2>
+<p>This webpage was created by Cameron Dedeaux to check for common misconfigurations and vulnerabilites in computers.</p>
+<button> Install Script</button>
+<form action="/showip" method="get">
+    <button>See your IP</button>
+  </form>
+</body>
+</html>

@@ -1,0 +1,130 @@
+#!/bin/bash
+
+# Root check
+if [ "$(id -u)" -ne 0 ]; then
+    echo "ERROR: This script must be run as root."
+    exit 1
+fi
+
+echo "[*] ClamAV IMIX Detection Setup"
+echo "[*] Press Ctrl+C to stop monitoring"
+
+# Install ClamAV
+if ! command -v clamscan &>/dev/null; then
+    echo "[*] Installing ClamAV..."
+    if command -v apt-get &>/dev/null; then
+        apt-get update -y && apt-get install -y clamav clamav-daemon clamav-freshclam
+    elif command -v dnf &>/dev/null; then
+        dnf install -y clamav clamav-update clamd
+    elif command -v yum &>/dev/null; then
+        yum install -y epel-release clamav clamav-update clamd
+    elif command -v zypper &>/dev/null; then
+        zypper install -y clamav
+    elif command -v pacman &>/dev/null; then
+        pacman -Sy --noconfirm clamav
+    elif command -v apk &>/dev/null; then
+        apk add --no-cache clamav clamav-daemon
+    else
+        echo "ERROR: Could not install ClamAV"
+        exit 1
+    fi
+    
+    if ! command -v clamscan &>/dev/null; then
+        echo "ERROR: ClamAV installation failed"
+        exit 1
+    fi
+    echo "[+] ClamAV installed"
+fi
+
+# Install inotify-tools
+if ! command -v inotifywait &>/dev/null; then
+    echo "[*] Installing inotify-tools..."
+    if command -v apt-get &>/dev/null; then
+        apt-get install -y inotify-tools
+    elif command -v dnf &>/dev/null; then
+        dnf install -y inotify-tools
+    elif command -v yum &>/dev/null; then
+        yum install -y inotify-tools
+    elif command -v zypper &>/dev/null; then
+        zypper install -y inotify-tools
+    elif command -v pacman &>/dev/null; then
+        pacman -Sy --noconfirm inotify-tools
+    elif command -v apk &>/dev/null; then
+        apk add --no-cache inotify-tools
+    elif command -v pkg &>/dev/null; then
+        pkg install -y libinotify
+    else
+        echo "ERROR: Could not install inotify-tools"
+        exit 1
+    fi
+    
+    if ! command -v inotifywait &>/dev/null; then
+        echo "ERROR: inotify-tools installation failed"
+        exit 1
+    fi
+    echo "[+] inotify-tools installed"
+fi
+
+# Stop freshclam service if running to avoid conflicts
+systemctl stop clamav-freshclam 2>/dev/null || true
+
+# Update virus definitions
+echo "[*] Updating virus definitions..."
+freshclam 2>/dev/null || echo "[!] Warning: freshclam failed"
+
+# Setup custom signatures directory
+DB_DIR=$(clamconf 2>/dev/null | grep -i "^DatabaseDirectory" | cut -d'"' -f2)
+if [ -z "$DB_DIR" ]; then
+    DB_DIR="/var/lib/clamav"
+fi
+
+CUSTOM_SIG_DIR="${DB_DIR}/custom"
+mkdir -p "$CUSTOM_SIG_DIR"
+
+echo "[+] Custom signatures directory: $CUSTOM_SIG_DIR"
+echo "[*] Add your .ndb and .ldb files to this directory"
+echo "[*] Creating IMIX ndbs"
+echo "IMIX:0:*:494d49580a" > "$CUSTOM_SIG_DIR/IMIX.ndb"
+echo " What do you want to check"
+echo "1 Check whole system"
+echo "2 New file monitoring"
+
+read userIn
+
+if [ "$userIn" -eq 1 ]; then
+	clamscan -r --exclude-dir="^/proc" --exclude-dir="^/sys" --exclude-dir="^/dev" --infected /
+elif [ "$userIn" -eq 2 ]; then
+	# Build array of Downloads directories
+	DIRS=()
+	for dir in /home/*/Downloads /root/Downloads; do
+    	[ -d "$dir" ] && DIRS+=("$dir")
+	done
+
+	# Check if any directories found
+	if [ ${#DIRS[@]} -eq 0 ]; then
+    	echo "ERROR: No Downloads directories found to monitor"
+    	exit 1
+	fi
+
+	echo "[*] Monitoring directories: ${DIRS[*]}"
+
+	# Monitor and scan
+	inotifywait -m -r -e create,moved_to "${DIRS[@]}" 2>/dev/null |
+	while read directory action file; do
+		filepath="${directory}${file}"
+    
+    	# Skip if it's a directory
+    	[ -d "$filepath" ] && continue
+    
+   	echo "[!] New file: $filepath"
+    
+   	 # Wait for file to finish writing
+   	sleep 0.5
+    
+    	# Scan (don't exit on error)
+    	clamscan --infected --no-summary "$filepath" || true
+	done
+else
+	echo "You bricked it"
+	exit
+fi
