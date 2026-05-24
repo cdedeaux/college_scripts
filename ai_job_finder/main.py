@@ -27,19 +27,17 @@ history = get_previous_jobs()
 prompt = f"""
 You are an expert technical recruiter. Today's date is {today}. 
 
-Search the web for 10 newly posted Fall 2026 Cybersecurity, IT, or network engineering internships within 400 miles of New York, NY. 
-Target postings strictly within the last 3 days. Focus heavily on low-applicant-volume sectors such as defense contractors, local public sector, BOCES, and regional government.
+Search the web for Winter 2026 or Spring 2027 Cybersecurity, IT, or network engineering internships located within the United States (prioritizing regions within 200 miles of New York, NY). 
+Focus heavily on low-applicant-volume sectors such as defense contractors, local public sector, BOCES, and regional government. If those specific sectors yield no results, find other US-based corporate options.
 
 Provide exactly 10 jobs (or as many as you can find). For each job, provide ONLY:
 - Link
 - Title
 - Company
 - 1-sentence summary
-
-Do not provide any conversational filler, greetings, or commentary. Output the results as a clean, plain-text list.
-
-CRITICAL INSTRUCTION:
-Below is the history of jobs you have already found in previous days. You must read through these and absolutely DO NOT include any of these companies or roles in your new output today.
+- Date posted
+CRITICAL FORMATTING INSTRUCTION: 
+Absolutely NO commentary, NO greetings, NO apologies, and NO internal search logs. Do not explain your reasoning. If you only find 3 jobs, just output those 3 jobs and STOP. Your final output must ONLY be the clean, plain-text list.
 
 --- PREVIOUS JOBS ---
 {history}

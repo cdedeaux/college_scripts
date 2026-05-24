@@ -1,0 +1,3 @@
+@echo off
+echo Starting the AI Job Hunter in WSL...
+wsl.exe -d kali-linux bash -c "cd /mnt/c/Users/Cameron/collegescripts/ai_job_finder && source venv/bin/activate && python3 main.py"
